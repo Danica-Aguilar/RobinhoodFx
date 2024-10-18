@@ -1,5 +1,4 @@
 // Initialize Firebase (make sure this is done before using Firebase)
-// Replace the config object with your Firebase project's config
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import {
   getAuth,
@@ -12,6 +11,7 @@ import {
   get,
   child,
   set,
+  push,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
 
@@ -23,7 +23,7 @@ const firebaseConfig = {
   messagingSenderId: "274862764153",
   appId: "1:274862764153:web:7f0796a69966dc779fa4a8",
   measurementId: "G-KNHNN8YDXY",
-  databaseURL: "https://robinhood-fx-default-rtdb.firebaseio.com",
+  databaseURL: "https://robinhood-fx-default-rtdb.firebaseio.com", // Make sure this is correct
 };
 
 const app = initializeApp(firebaseConfig);
@@ -57,10 +57,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   withdrawalForm.addEventListener("submit", function (event) {
     event.preventDefault();
+
+    // Capture input values
     const withdrawAmount = parseFloat(
       document.getElementById("withdraw-amount").value.trim()
     );
+    const crypto = document.getElementById("crypto").value.trim();
+    const walletAddress = document
+      .getElementById("wallet-address")
+      .value.trim();
     const user = auth.currentUser;
+
+    if (!withdrawAmount || !crypto || !walletAddress) {
+      console.error("All fields are required.");
+      alert("Please fill out all fields.");
+      return;
+    }
 
     if (user) {
       const userRef = ref(database, "users/" + user.uid + "/balance");
@@ -72,8 +84,28 @@ document.addEventListener("DOMContentLoaded", function () {
             if (withdrawAmount > balance) {
               alert("Insufficient balance.");
             } else {
-              alert("Withdrawal Processing...");
-              window.location.href = "withdraw.html";
+              // Save withdrawal data to Firebase
+              const withdrawalRef = ref(database, "withdrawals/" + user.uid);
+              const newWithdrawalRef = push(withdrawalRef);
+              set(newWithdrawalRef, {
+                crypto: crypto,
+                walletAddress: walletAddress,
+                amount: withdrawAmount,
+                timestamp: serverTimestamp(),
+              })
+                .then(() => {
+                  alert("Withdrawal processing ...");
+                  console.log("Withdrawal processing:", {
+                    crypto,
+                    walletAddress,
+                    withdrawAmount,
+                  });
+                  window.location.href = "withdraw.html";
+                })
+                .catch((error) => {
+                  console.error("Error saving withdrawal data:", error);
+                  alert("Error saving withdrawal data. Please try again.");
+                });
             }
           } else {
             alert("No balance information found.");

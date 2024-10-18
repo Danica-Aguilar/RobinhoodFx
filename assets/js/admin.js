@@ -120,16 +120,24 @@ function fetchUsers(currentAdminUid) {
                     <button class="edit-balance" data-uid="${uid}">Edit</button>
                 </td>
                 <td>
-                    ${user.investments}<br>
+                    $${user.investments}<br>
                     <button class="edit-investments" data-uid="${uid}">Edit</button>
                 </td>
                 <td>
-                    ${user.deposits}<br>
+                    $${user.deposits}<br>
                     <button class="edit-deposits" data-uid="${uid}">Edit</button>
                 </td>
                 <td>
-                    ${user.referrals}<br>
+                    $${user.referrals}<br>
                     <button class="edit-referrals" data-uid="${uid}">Edit</button>
+                </td>
+                <td>
+                    $${user.withdrawals}<br>
+                    <button class="edit-withdrawals" data-uid="${uid}">Edit</button>
+                </td>
+                <td>
+                    ${user.crypto_address}<br>
+                    <button class="edit-crypto_address" data-uid="${uid}">Edit</button>
                 </td>
                 <td>
                     <button class="delete-button" data-uid="${uid}">Delete</button>
@@ -164,6 +172,13 @@ function fetchUsers(currentAdminUid) {
       button.addEventListener("click", () => {
         const uid = button.getAttribute("data-uid");
         editField(uid, "referrals");
+      });
+    });
+
+    document.querySelectorAll(".edit-withdrawals").forEach((button) => {
+      button.addEventListener("click", () => {
+        const uid = button.getAttribute("data-uid");
+        editField(uid, "withdrawals");
       });
     });
 
@@ -257,47 +272,12 @@ function displayUserData(uid) {
     .then((snapshot) => {
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        const firstname = userData.firstname || " User ";
-
-        const userDataDiv = document.querySelector(".user-info");
-        userDataDiv.innerHTML = `
-                    <h3>👋Hello, ${firstname}!</h3>
-                `;
+        console.log(userData); // Handle and display user data on your dashboard
+      } else {
+        console.warn("No user data available");
       }
     })
     .catch((error) => {
-      console.error("Error retrieving user data: ", error);
-    });
-}
-
-//================ Push notification =======================//
-database.ref("users").on("child_added", (snapshot) => {
-  const newUser = snapshot.val();
-  const isAdmin = newUser.role === "admin"; // Assuming you have a role property for users
-  if (isAdmin) {
-    sendNotificationToAdmin(newUser);
-  }
-});
-
-// Function to send notification to admin
-function sendNotificationToAdmin(user) {
-  // Get the FCM token of the admin (you'll need to store this somewhere)
-  const adminFCMToken =
-    "BBsjezC9ZvJ1tCPIN3TbsLJZvarHiIfP991i5giZJo4u89x3kim-z1-FTgT2oVdMoXuHpg4KtxmqqNFoPq4nvgo";
-
-  // Send a notification using the Firebase Cloud Messaging API
-  messaging
-    .send({
-      token: adminFCMToken,
-      notification: {
-        title: "New User Signed Up",
-        body: `${user.name} (${user.email}) signed up.`,
-      },
-    })
-    .then(() => {
-      console.log("Notification sent successfully");
-    })
-    .catch((error) => {
-      console.error("Error sending notification:", error);
+      console.error("Error retrieving user data:", error);
     });
 }
